@@ -8,8 +8,14 @@ import { kv } from '@vercel/kv'
 import { ResultCode } from '@/lib/utils'
 
 export async function getUser(email: string) {
-  const user = await kv.hgetall<User>(`user:${email}`)
-  return user
+  try {
+    // Fetch user data from the key-value store
+    const user = await kv.hgetall<User>(`user:${email}`)
+    return user
+  } catch (error) {
+    console.error('Failed to retrieve user:', error)
+    return null
+  }
 }
 
 interface Result {
@@ -22,9 +28,10 @@ export async function authenticate(
   formData: FormData
 ): Promise<Result | undefined> {
   try {
-    const email = formData.get('email')
-    const password = formData.get('password')
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
 
+    // Validate credentials using Zod
     const parsedCredentials = z
       .object({
         email: z.string().email(),
@@ -36,15 +43,24 @@ export async function authenticate(
       })
 
     if (parsedCredentials.success) {
-      await signIn('credentials', {
+      // Attempt to sign in
+      const result = await signIn('credentials', {
         email,
         password,
         redirect: false
       })
 
-      return {
-        type: 'success',
-        resultCode: ResultCode.UserLoggedIn
+      // Check if the sign-in attempt was successful
+      if (result?.ok) {
+        return {
+          type: 'success',
+          resultCode: ResultCode.UserLoggedIn
+        }
+      } else {
+        return {
+          type: 'error',
+          resultCode: ResultCode.InvalidCredentials
+        }
       }
     } else {
       return {
@@ -53,6 +69,7 @@ export async function authenticate(
       }
     }
   } catch (error) {
+    // Handle specific AuthError and other errors
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
@@ -65,6 +82,12 @@ export async function authenticate(
             type: 'error',
             resultCode: ResultCode.UnknownError
           }
+      }
+    } else {
+      console.error('Authentication error:', error)
+      return {
+        type: 'error',
+        resultCode: ResultCode.UnknownError
       }
     }
   }

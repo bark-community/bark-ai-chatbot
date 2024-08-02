@@ -1,7 +1,6 @@
 'use client'
 
 import { type Message } from 'ai'
-
 import { Button } from '@/components/ui/button'
 import { IconCheck, IconCopy } from '@/components/ui/icons'
 import { useCopyToClipboard } from '@/lib/hooks/use-copy-to-clipboard'
@@ -18,9 +17,10 @@ export function ChatMessageActions({
 }: ChatMessageActionsProps) {
   const { isCopied, copyToClipboard } = useCopyToClipboard({ timeout: 2000 })
 
-  const onCopy = () => {
-    if (isCopied) return
-    copyToClipboard(message.content)
+  const handleCopy = () => {
+    if (!isCopied) {
+      copyToClipboard(message.content)
+    }
   }
 
   return (
@@ -31,7 +31,12 @@ export function ChatMessageActions({
       )}
       {...props}
     >
-      <Button variant="ghost" size="icon" onClick={onCopy}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleCopy}
+        aria-label={isCopied ? 'Message copied' : 'Copy message'}
+      >
         {isCopied ? <IconCheck /> : <IconCopy />}
         <span className="sr-only">Copy message</span>
       </Button>

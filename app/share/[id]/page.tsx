@@ -1,5 +1,5 @@
 import { type Metadata } from 'next'
-import { notFound, redirect } from 'next/navigation'
+import { notFound } from 'next/navigation'
 
 import { formatDate } from '@/lib/utils'
 import { getSharedChat } from '@/app/actions'
@@ -16,23 +16,26 @@ interface SharePageProps {
   }
 }
 
-export async function generateMetadata({
-  params
-}: SharePageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: SharePageProps): Promise<Metadata> {
   const chat = await getSharedChat(params.id)
 
+  // Fallback title if chat is not found
+  const title = chat?.title.slice(0, 50) ?? 'Chat'
+
   return {
-    title: chat?.title.slice(0, 50) ?? 'Chat'
+    title
   }
 }
 
 export default async function SharePage({ params }: SharePageProps) {
   const chat = await getSharedChat(params.id)
 
-  if (!chat || !chat?.sharePath) {
+  if (!chat || !chat.sharePath) {
+    // Using notFound() to handle 404 errors
     notFound()
   }
 
+  // Convert chat data into UI state
   const uiState: UIState = getUIStateFromAIState(chat)
 
   return (
@@ -48,6 +51,7 @@ export default async function SharePage({ params }: SharePageProps) {
             </div>
           </div>
         </div>
+        {/* Render chat messages with AI component */}
         <AI>
           <ChatList messages={uiState} isShared={true} />
         </AI>

@@ -45,7 +45,7 @@ async function confirmPurchase(symbol: string, price: number, amount: number) {
     <div className="inline-flex items-start gap-1 md:items-center">
       {spinner}
       <p className="mb-2">
-        Purchasing {amount} ${symbol}...
+        Purchasing {amount} {symbol}...
       </p>
     </div>
   )
@@ -59,7 +59,7 @@ async function confirmPurchase(symbol: string, price: number, amount: number) {
       <div className="inline-flex items-start gap-1 md:items-center">
         {spinner}
         <p className="mb-2">
-          Purchasing {amount} ${symbol}... working on it...
+          Purchasing {amount} {symbol}... working on it...
         </p>
       </div>
     )
@@ -69,7 +69,7 @@ async function confirmPurchase(symbol: string, price: number, amount: number) {
     purchasing.done(
       <div>
         <p className="mb-2">
-          You have successfully purchased {amount} ${symbol}. Total cost:{' '}
+          You have successfully purchased {amount} {symbol}. Total cost:{' '}
           {formatNumber(amount * price)}
         </p>
       </div>
@@ -123,25 +123,25 @@ async function submitUserMessage(content: string) {
     ]
   })
 
-  let textStream: undefined | ReturnType<typeof createStreamableValue<string>>
-  let textNode: undefined | React.ReactNode
+  let textStream: ReturnType<typeof createStreamableValue<string>> | undefined
+  let textNode: React.ReactNode | undefined
 
   const result = await streamUI({
     model: openai('gpt-3.5-turbo'),
     initial: <SpinnerMessage />,
     system: `\
-    You are a stock trading conversation bot and you can help users buy BARKs, step by step.
-    You and the user can discuss stock prices and the user can adjust the amount of BARKs they want to buy, or place an order, in the UI.
+    You are a stock trading conversation bot and you can help users buy stocks, step by step.
+    You and the user can discuss stock prices and the user can adjust the amount of stocks they want to buy, or place an order, in the UI.
     
     Messages inside [] means that it's a UI element or a user event. For example:
-    - "[Price of BARK = 100]" means that an interface of the stock price of AAPL is shown to the user.
-    - "[User has changed the amount of BARK to 10]" means that the user has changed the amount of BARK to 10 in the UI.
+    - "[Price of STOCK = 100]" means that an interface of the stock price of AAPL is shown to the user.
+    - "[User has changed the amount of STOCK to 10]" means that the user has changed the amount of STOCK to 10 in the UI.
     
-    If the user requests purchasing a BARK, call \`show_stock_purchase_ui\` to show the purchase token.
+    If the user requests purchasing a stock, call \`show_stock_purchase_ui\` to show the purchase token.
     If the user just wants the price, call \`show_stock_price\` to show the price.
-    If you want to show trending BARKs, call \`list_stocks\`.
+    If you want to show trending stocks, call \`list_stocks\`.
     If you want to show events, call \`get_events\`.
-    If the user wants to sell BARK, or complete another impossible task, respond that you are a demo and cannot do that.
+    If the user wants to sell stocks, or complete another impossible task, respond that you are a demo and cannot do that.
     
     Besides that, you can also chat with users and do some calculations if needed.`,
     messages: [
@@ -182,9 +182,9 @@ async function submitUserMessage(content: string) {
         parameters: z.object({
           stocks: z.array(
             z.object({
-              symbol: z.string().describe('The symbol of the token'),
-              price: z.number().describe('The price of the token'),
-              delta: z.number().describe('The change in price of the token')
+              symbol: z.string().describe('The symbol of the stock'),
+              price: z.number().describe('The price of the stock'),
+              delta: z.number().describe('The change in price of the stock')
             })
           )
         }),
@@ -243,9 +243,7 @@ async function submitUserMessage(content: string) {
         parameters: z.object({
           symbol: z
             .string()
-            .describe(
-              'The name or symbol of the stock or currency. e.g. BARK/SOL/USD.'
-            ),
+            .describe('The name or symbol of the stock or currency. e.g. STOCK/USD.'),
           price: z.number().describe('The price of the stock.'),
           delta: z.number().describe('The change in price of the stock')
         }),
@@ -304,16 +302,12 @@ async function submitUserMessage(content: string) {
         parameters: z.object({
           symbol: z
             .string()
-            .describe(
-              'The name or symbol of the stock or currency. e.g. BARK/AAPL/USD.'
-            ),
+            .describe('The name or symbol of the stock or currency. e.g. STOCK/USD.'),
           price: z.number().describe('The price of the stock.'),
           numberOfShares: z
             .number()
             .optional()
-            .describe(
-              'The **number of shares** for a stock or currency to purchase. Can be optional if the user did not specify it.'
-            )
+            .describe('The number of shares for a stock or currency to purchase. Can be optional if the user did not specify it.')
         }),
         generate: async function* ({ symbol, price, numberOfShares = 100 }) {
           const toolCallId = nanoid()
@@ -513,9 +507,8 @@ export const AI = createAI<AIState, UIState>({
         const uiState = getUIStateFromAIState(aiState)
         return uiState
       }
-    } else {
-      return
     }
+    return []
   },
   onSetAIState: async ({ state }) => {
     'use server'
@@ -542,8 +535,6 @@ export const AI = createAI<AIState, UIState>({
       }
 
       await saveChat(chat)
-    } else {
-      return
     }
   }
 })
@@ -556,28 +547,34 @@ export const getUIStateFromAIState = (aiState: Chat) => {
       display:
         message.role === 'tool' ? (
           message.content.map(tool => {
-            return tool.toolName === 'listStocks' ? (
-              <BotCard>
-                {/* TODO: Infer types based on the tool result*/}
-                {/* @ts-expect-error */}
-                <Stocks props={tool.result} />
-              </BotCard>
-            ) : tool.toolName === 'showStockPrice' ? (
-              <BotCard>
-                {/* @ts-expect-error */}
-                <Stock props={tool.result} />
-              </BotCard>
-            ) : tool.toolName === 'showStockPurchase' ? (
-              <BotCard>
-                {/* @ts-expect-error */}
-                <Purchase props={tool.result} />
-              </BotCard>
-            ) : tool.toolName === 'getEvents' ? (
-              <BotCard>
-                {/* @ts-expect-error */}
-                <Events props={tool.result} />
-              </BotCard>
-            ) : null
+            switch (tool.toolName) {
+              case 'listStocks':
+                return (
+                  <BotCard>
+                    <Stocks props={tool.result} />
+                  </BotCard>
+                )
+              case 'showStockPrice':
+                return (
+                  <BotCard>
+                    <Stock props={tool.result} />
+                  </BotCard>
+                )
+              case 'showStockPurchase':
+                return (
+                  <BotCard>
+                    <Purchase props={tool.result} />
+                  </BotCard>
+                )
+              case 'getEvents':
+                return (
+                  <BotCard>
+                    <Events props={tool.result} />
+                  </BotCard>
+                )
+              default:
+                return null
+            }
           })
         ) : message.role === 'user' ? (
           <UserMessage>{message.content as string}</UserMessage>

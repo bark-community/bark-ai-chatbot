@@ -26,7 +26,7 @@ export function ButtonScrollToBottom({
         isAtBottom ? 'opacity-0' : 'opacity-100',
         className
       )}
-      onClick={() => scrollToBottom()}
+      onClick={scrollToBottom}  // Simplified function call
       {...props}
     >
       <IconArrowDown />

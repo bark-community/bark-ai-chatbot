@@ -18,6 +18,7 @@ export async function generateMetadata({
 }: ChatPageProps): Promise<Metadata> {
   const session = await auth()
 
+  // Check if the user is authenticated
   if (!session?.user) {
     return {}
   }
@@ -25,41 +26,47 @@ export async function generateMetadata({
   const chat = await getChat(params.id, session.user.id)
 
   if (!chat || 'error' in chat) {
-    redirect('/')
-  } else {
+    // Redirect if chat is not found or there's an error
     return {
-      title: chat?.title.toString().slice(0, 50) ?? 'Chat'
+      title: 'Chat not found'
     }
+  }
+
+  return {
+    title: chat.title.toString().slice(0, 50) ?? 'Chat'
   }
 }
 
 export default async function ChatPage({ params }: ChatPageProps) {
   const session = (await auth()) as Session
-  const missingKeys = await getMissingKeys()
 
+  // Redirect to login if user is not authenticated
   if (!session?.user) {
-    redirect(`/login?next=/chat/${params.id}`)
+    return redirect(`/login?next=/chat/${params.id}`)
   }
 
   const userId = session.user.id as string
   const chat = await getChat(params.id, userId)
+  const missingKeys = await getMissingKeys()
 
   if (!chat || 'error' in chat) {
-    redirect('/')
-  } else {
-    if (chat?.userId !== session?.user?.id) {
-      notFound()
-    }
-
-    return (
-      <AI initialAIState={{ chatId: chat.id, messages: chat.messages }}>
-        <Chat
-          id={chat.id}
-          session={session}
-          initialMessages={chat.messages}
-          missingKeys={missingKeys}
-        />
-      </AI>
-    )
+    // Redirect to homepage if chat is not found or there's an error
+    return redirect('/')
   }
+
+  // Ensure the chat belongs to the current user
+  if (chat.userId !== userId) {
+    return notFound()
+  }
+
+  return (
+    <AI initialAIState={{ chatId: chat.id, messages: chat.messages }}>
+      <Chat
+        id={chat.id}
+        session={session}
+        initialMessages={chat.messages}
+        missingKeys={missingKeys}
+      />
+    </AI>
+  )
 }

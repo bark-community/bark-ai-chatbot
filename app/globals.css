@@ -1,7 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600&family=Poppins:wght@400;600&display=swap');
+
+/* Tailwind base styles */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Additional global styles */
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -28,6 +32,9 @@
     --orange: 30 95% 50%;
     --orange-foreground: 30 100% 98%;
     --radius: 0.5rem;
+    --font-anton: 'Anton', sans-serif;
+    --font-inter: 'Inter', sans-serif;
+    --font-poppins: 'Poppins', sans-serif;
   }
 
   .dark {
@@ -59,5 +66,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-inter);
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-anton);
+  }
+  p, a, span, div {
+    font-family: var(--font-poppins);
   }
 }

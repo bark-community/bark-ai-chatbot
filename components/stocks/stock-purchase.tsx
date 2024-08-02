@@ -4,59 +4,52 @@ import { useId, useState } from 'react'
 import { useActions, useAIState, useUIState } from 'ai/rsc'
 import { formatNumber } from '@/lib/utils'
 
-import type { AI } from '@/lib/chat/actions'
-
-interface Purchase {
+interface PurchaseProps {
   numberOfShares?: number
   symbol: string
   price: number
   status: 'requires_action' | 'completed' | 'expired'
 }
 
-export function Purchase({
-  props: { numberOfShares, symbol, price, status = 'expired' }
-}: {
-  props: Purchase
-}) {
+export function Purchase({ numberOfShares, symbol, price, status = 'expired' }: PurchaseProps) {
   const [value, setValue] = useState(numberOfShares || 100)
-  const [purchasingUI, setPurchasingUI] = useState<null | React.ReactNode>(null)
+  const [purchasingUI, setPurchasingUI] = useState<React.ReactNode | null>(null)
   const [aiState, setAIState] = useAIState<typeof AI>()
   const [, setMessages] = useUIState<typeof AI>()
   const { confirmPurchase } = useActions()
 
-  // Unique identifier for this UI component.
   const id = useId()
 
-  // Whenever the slider changes, we need to update the local value state and the history
-  // so LLM also knows what's going on.
   function onSliderChange(e: React.ChangeEvent<HTMLInputElement>) {
     const newValue = Number(e.target.value)
     setValue(newValue)
 
-    // Insert a hidden history info to the list.
     const message = {
       role: 'system' as const,
-      content: `[User has changed to purchase ${newValue} shares of ${name}. Total cost: $${(
-        newValue * price
-      ).toFixed(2)}]`,
-
-      // Identifier of this UI component, so we don't insert it many times.
+      content: `[User has changed to purchase ${newValue} shares of ${symbol}. Total cost: $${(newValue * price).toFixed(2)}]`,
       id
     }
 
-    // If last history state is already this info, update it. This is to avoid
-    // adding every slider change to the history.
-    if (aiState.messages[aiState.messages.length - 1]?.id === id) {
+    const lastMessage = aiState.messages[aiState.messages.length - 1]
+    if (lastMessage?.id === id) {
       setAIState({
         ...aiState,
         messages: [...aiState.messages.slice(0, -1), message]
       })
-
-      return
+    } else {
+      setAIState({ ...aiState, messages: [...aiState.messages, message] })
     }
+  }
 
-    // If it doesn't exist, append it to history.
-    setAIState({ ...aiState, messages: [...aiState.messages, message] })
+  async function handlePurchase() {
+    try {
+      const response = await confirmPurchase(symbol, price, value)
+      setPurchasingUI(response.purchasingUI)
+      setMessages((currentMessages: any) => [...currentMessages, response.newMessage])
+    } catch (error) {
+      console.error('Purchase failed:', error)
+      // Handle purchase error (e.g., show a message to the user)
+    }
   }
 
   return (
@@ -79,20 +72,15 @@ export function Purchase({
               onChange={onSliderChange}
               min="10"
               max="1000"
+              aria-label="Number of shares to purchase"
               className="w-full h-1 rounded-lg appearance-none cursor-pointer bg-zinc-600 accent-green-500 dark:bg-zinc-700"
             />
-            <span className="absolute text-xs bottom-1 start-0 text-zinc-400">
-              10
-            </span>
-            <span className="absolute text-xs -translate-x-1/2 bottom-1 start-1/3 text-zinc-400 rtl:translate-x-1/2">
-              100
-            </span>
-            <span className="absolute text-xs -translate-x-1/2 bottom-1 start-2/3 text-zinc-400 rtl:translate-x-1/2">
-              500
-            </span>
-            <span className="absolute text-xs bottom-1 end-0 text-zinc-400">
-              1000
-            </span>
+            <div className="flex justify-between text-xs text-zinc-400">
+              <span>10</span>
+              <span>100</span>
+              <span>500</span>
+              <span>1000</span>
+            </div>
           </div>
 
           <div className="mt-6">
@@ -119,23 +107,14 @@ export function Purchase({
 
           <button
             className="w-full px-4 py-2 mt-6 font-bold bg-green-400 rounded-lg text-zinc-900 hover:bg-green-500"
-            onClick={async () => {
-              const response = await confirmPurchase(symbol, price, value)
-              setPurchasingUI(response.purchasingUI)
-
-              // Insert a new system message to the UI.
-              setMessages((currentMessages: any) => [
-                ...currentMessages,
-                response.newMessage
-              ])
-            }}
+            onClick={handlePurchase}
           >
             Purchase
           </button>
         </>
       ) : status === 'completed' ? (
         <p className="mb-2 text-white">
-          You have successfully purchased {value} ${symbol}. Total cost:{' '}
+          You have successfully purchased {value} shares of {symbol}. Total cost:{' '}
           {formatNumber(value * price)}
         </p>
       ) : status === 'expired' ? (
