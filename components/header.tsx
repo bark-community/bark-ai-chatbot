@@ -1,23 +1,23 @@
-import * as React from 'react'
-import Link from 'next/link'
+import * as React from 'react';
+import Link from 'next/link';
 
-import { cn } from '@/lib/utils'
-import { auth } from '@/auth'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils';
+import { auth } from '@/auth';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   IconGitHub,
   IconNextChat,
   IconSeparator,
   IconVercel
-} from '@/components/ui/icons'
-import { UserMenu } from '@/components/user-menu'
-import { SidebarMobile } from './sidebar-mobile'
-import { SidebarToggle } from './sidebar-toggle'
-import { ChatHistory } from './chat-history'
-import { Session } from '@/lib/types'
+} from '@/components/ui/icons';
+import { UserMenu } from '@/components/user-menu';
+import { SidebarMobile } from './sidebar-mobile';
+import { SidebarToggle } from './sidebar-toggle';
+import { ChatHistory } from './chat-history';
+import { Session } from '@/lib/types';
 
 async function UserOrLogin() {
-  const session = (await auth()) as Session
+  const session = (await auth()) as Session;
   return (
     <>
       {session?.user ? (
@@ -44,7 +44,7 @@ async function UserOrLogin() {
         )}
       </div>
     </>
-  )
+  );
 }
 
 export function Header() {
@@ -58,7 +58,7 @@ export function Header() {
       <div className="flex items-center justify-end space-x-2">
         <a
           target="_blank"
-          href="https://github.com/vercel/nextjs-ai-chatbot/"
+          href="https://github.com/bark-community/bark-ai-chatbot"
           rel="noopener noreferrer"
           className={cn(buttonVariants({ variant: 'outline' }))}
         >
@@ -66,15 +66,15 @@ export function Header() {
           <span className="hidden ml-2 md:flex">GitHub</span>
         </a>
         <a
-          href="https://vercel.com/templates/Next.js/nextjs-ai-chatbot"
+          href="https://raydium.io/swap/?inputMint=sol&outputMint=2NTvEssJ2i998V2cMGT4Fy3JhyFnAzHFonDo9dbAkVrg&referrer=BARKkeAwhTuFzcLHX4DjotRsmjXQ1MshGrZbn1CUQqMo"
           target="_blank"
           className={cn(buttonVariants())}
         >
           <IconVercel className="mr-2" />
-          <span className="hidden sm:block">Deploy to Vercel</span>
-          <span className="sm:hidden">Deploy</span>
+          <span className="hidden sm:block">Swap</span>
+          <span className="sm:hidden">Swap</span>
         </a>
       </div>
     </header>
-  )
+  );
 }

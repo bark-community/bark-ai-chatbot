@@ -1,8 +1,9 @@
-import React from 'react'
+import React from 'react';
 
-import { cn } from '@/lib/utils'
-import { ExternalLink } from '@/components/external-link'
+import { cn } from '@/lib/utils';
+import { ExternalLink } from '@/components/external-link';
 
+// FooterText component: Displays a footer paragraph with external links and a BARK reference
 export function FooterText({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <p
@@ -12,12 +13,12 @@ export function FooterText({ className, ...props }: React.ComponentProps<'p'>) {
       )}
       {...props}
     >
-      Open source AI chatbot built with{' '}
-      <ExternalLink href="https://nextjs.org">Next.js</ExternalLink> and{' '}
-      <ExternalLink href="https://github.com/vercel/ai">
-        Vercel AI SDK
-      </ExternalLink>
-      .
+      Open source AI chatbot with BARK integration, powered by{' '}
+      <ExternalLink href="https://solana.com">Solana</ExternalLink> and{' '}
+      <ExternalLink href="https://openai.com">OpenAI</ExternalLink>. Learn more in our{' '}
+      <ExternalLink href="https://doc.barkchatbot.app">Documentation</ExternalLink> and check out the{' '}
+      <ExternalLink href="https://github.com/bark-community/bark-ai-chatbot">BARK AI Chatbot</ExternalLink>.
     </p>
-  )
+  );
 }
+
